@@ -1,49 +1,38 @@
-#
-# libstream
-#
+cmake_minimum_required(VERSION 3.14)
 
-set(TARGET libstream)
+project(libstream)
 
-add_executable(${TARGET}
+# Set the source files
+set(SOURCE_FILES
     emscripten.cpp
     )
 
+# Define the target
+add_executable(libstream ${SOURCE_FILES})
+
+# Include default target options (optional, depends on your setup)
 include(DefaultTargetOptions)
 
-target_link_libraries(${TARGET} PRIVATE
-    whisper
-    )
+# Link with necessary libraries
+target_link_libraries(libstream PRIVATE whisper)
 
-unset(EXTRA_FLAGS)
-
-if (WHISPER_WASM_SINGLE_FILE)
-    set(EXTRA_FLAGS "-s SINGLE_FILE=1")
-    message(STATUS "Embedding WASM inside stream.js")
-
-    add_custom_command(
-        TARGET ${TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_BINARY_DIR}/bin/libstream.js
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/stream.wasm/stream.js
-        )
-endif()
-
-set_target_properties(${TARGET} PROPERTIES LINK_FLAGS " \
-    --bind \
+# Set the WASM specific flags
+set_target_properties(libstream PROPERTIES LINK_FLAGS "\
+    -s STANDALONE_WASM \
+    -s DISABLE_EXCEPTION_CATCHING=1 \
     -s USE_PTHREADS=1 \
     -s PTHREAD_POOL_SIZE=8 \
     -s INITIAL_MEMORY=1024MB \
     -s TOTAL_MEMORY=1024MB \
-    -s FORCE_FILESYSTEM=1 \
-    -s EXPORTED_RUNTIME_METHODS=\"['print', 'printErr', 'ccall', 'cwrap']\" \
-    ${EXTRA_FLAGS} \
+    -s NO_EXIT_RUNTIME=1 \
+    -s EXPORTED_FUNCTIONS='[_main]' \
+    -s EXTRA_EXPORTED_RUNTIME_METHODS='[]' \
     ")
 
-#
-# stream.wasm
-#
-
-set(TARGET stream.wasm)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/index-tmpl.html  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET}/index.html @ONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../helpers.js    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET}/helpers.js @ONLY)
+# Add custom command to rename output to .wasm only
+add_custom_command(
+    TARGET libstream POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rename
+    ${CMAKE_BINARY_DIR}/libstream.wasm
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libstream.wasm
+)
