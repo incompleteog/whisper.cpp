@@ -1,0 +1,27 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ make
+
+    - name: Build libwhisper.so
+      run: make libwhisper.so
+      # Ensure your Makefile directly supports building libwhisper.so
+
+    - name: Run Tests
+      run: make test
+      # Adjust according to your project's actual test invocation command
