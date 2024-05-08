@@ -1,0 +1,35 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y g++ make
+
+    - name: Configure
+      run: ./configure
+      # Ensure your configure script is correctly set up to prepare the building of a .so library
+
+    - name: Build libwhisper.so
+      run: make libwhisper.so
+      # This assumes you have a target in your Makefile that builds libwhisper.so
+
+    - name: Check
+      run: make check
+      # Optionally run tests if you have them configured
+
+    - name: Distcheck
+      run: make distcheck
+      # This typically ensures the package can be made into a distribution archive, not always necessary for library compilation
